@@ -867,19 +867,22 @@ class HandRightTab(QWidget):
 
     def openOutputPath(self):
         path = self.outputPathBox.text().strip()
+        QMessageBox.information(self, '调试', f'原始路径：{repr(path)}')
         if path.startswith('file://'):
             from urllib.parse import urlparse
             path = urlparse(path).path
+            QMessageBox.information(self, '调试', f'剥离 file:// 后：{repr(path)}')
         if not os.path.isdir(path):
             QMessageBox.warning(self, '路径错误', f'输出路径不存在：{path}')
             return
         import subprocess
+        QMessageBox.information(self, '调试', f'即将执行：{sys.platform} -> {path}')
         if sys.platform == 'win32':
-            subprocess.run(['explorer', path])
+            subprocess.Popen(['explorer', path])
         elif sys.platform == 'darwin':
-            subprocess.run(['open', path])
+            subprocess.Popen(['open', path])
         else:
-            subprocess.run(['xdg-open', path])
+            subprocess.Popen(['xdg-open', path])
 
     def loadHideToTrayPreference(self):
         cursor = self.conn.cursor()
