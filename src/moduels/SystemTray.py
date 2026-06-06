@@ -1,8 +1,8 @@
 import sys
 
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtWidgets import *
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtWidgets import *
 
 
 class SystemTray(QSystemTrayIcon):
@@ -12,7 +12,7 @@ class SystemTray(QSystemTrayIcon):
         self.setIcon(icon)
         self.setParent(window)
         self.activated.connect(self.trayEvent)  # 设置托盘点击事件处理函数
-        self.tray_menu = QMenu(QApplication.desktop())  # 创建菜单
+        self.tray_menu = QMenu()  # 创建菜单
         self.QuitAction = QAction(self.tr('退出'), self, triggered=self.quit)  # 添加一级菜单动作选项(退出程序)
         self.tray_menu.addAction(self.QuitAction)
         self.setContextMenu(self.tray_menu)  # 设置系统托盘菜单

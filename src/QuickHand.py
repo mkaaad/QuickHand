@@ -5,16 +5,19 @@ import sys
 import platform
 import sqlite3
 
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtSql import *
-from PySide2.QtWidgets import *
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtSql import *
+from PySide6.QtWidgets import *
 
 from moduels.SystemTray import SystemTray # 引入托盘栏
 from moduels.HandRightTab import HandRightTab
 from moduels.ConfigTab import ConfigTab
 from moduels.HelpTab import HelpTab
 
+# PyInstaller 打包后资源文件解压在 sys._MEIPASS，需要切换工作目录
+if getattr(sys, 'frozen', False):
+    os.chdir(sys._MEIPASS)
 
 dbname = './database.db'  # 存储预设的数据库名字
 presetTableName = 'configPreset'  # 存储预设的表单名字
@@ -143,5 +146,5 @@ if __name__ == '__main__':
         tray = SystemTray(QIcon('icon.ico'), main)
     else:
         tray = SystemTray(QIcon('icon.icns'), main)
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
     conn.close()

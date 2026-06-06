@@ -25,7 +25,14 @@ Windows 用户：下载压缩包，解压，双击运行 `QuickHand.exe` 即可�
 
 ## 🔨 自行构建
 
-项目使用 GitHub Actions 自动打包多架构（Windows / Linux / macOS），推送标签即可触发构建。
+|架构 | Runner | 产物 |
+|------|--------|------|
+| Windows x86_64 | `windows-latest` | `.rar` |
+| Linux x86_64 | `ubuntu-latest` | `.tar.gz` |
+| macOS x86_64 | `macos-13` | `.tar.gz` |
+| macOS arm64 | `macos-latest` | `.tar.gz` |
+
+推送标签 `v*` 即触发构建，打包完成后自动发布到 Release。
 
 如需本地构建：
 

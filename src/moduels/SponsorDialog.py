@@ -1,5 +1,5 @@
-from PySide2.QtWidgets import *
-from PySide2.QtGui import *
+from PySide6.QtWidgets import *
+from PySide6.QtGui import *
 
 class SponsorDialog(QDialog):
     def __init__(self, platfm, parent=None):

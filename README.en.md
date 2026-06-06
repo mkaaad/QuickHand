@@ -1,36 +1,61 @@
-# QuickHand
+#  ![icon](assets/icon.ico) Quick Hand
 
-#### Description
-快速的仿手写文字的图片生成器。基于 https://github.com/Gsllchb/Handright/ 的 GUI。
+## 📝 Introduction
 
-#### Software Architecture
-Software architecture description
+A fast handwritten-style text image generator. GUI wrapper for [Handright](https://github.com/Gsllchb/Handright/).
 
-#### Installation
+Open source and free to use. Downloads on the [Release](https://github.com/mkaaad/QuickHand/releases) page.
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+Screenshot:
 
-#### Instructions
+![Screenshot](assets/screenshot.png)
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## 🔮 Usage
 
-#### Contribution
+Core idea: random perturbation of each character in horizontal position, vertical position, and font size, followed by per-stroke perturbation in horizontal position, vertical position, and rotation angle — producing realistic handwriting effects.
 
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
+Windows: download archive, unzip, double-click `QuickHand.exe`.
 
+- Put your font files (ttf/otf) in the `fonts` folder
+- Put background images in the `backgrounds` folder
 
-#### Gitee Feature
+Parameter reference:
 
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+![Parameter Reference](assets/params-reference.png)
+
+## 🔨 Build
+
+Pre-built binaries for all platforms are built by GitHub Actions on tag push:
+
+| Platform | Runner | Artifact |
+|----------|--------|----------|
+| Windows x86_64 | `windows-latest` | `.rar` |
+| Linux x86_64 | `ubuntu-latest` | `.tar.gz` |
+| macOS x86_64 | `macos-13` | `.tar.gz` |
+| macOS arm64 | `macos-latest` | `.tar.gz` |
+
+Push a `v*` tag to trigger the build; artifacts are published to the Release automatically.
+
+To build locally:
+
+```bash
+pip install -r requirements.txt pyinstaller
+cd src
+pyinstaller --noconfirm -w \
+  --hidden-import pkg_resources.py2_warn \
+  -i icon.ico \
+  --add-data "database.db:." \
+  --add-data "style.css:." \
+  --add-data "icon.ico:." \
+  --add-data "fonts:fonts" \
+  --add-data "backgrounds:backgrounds" \
+  QuickHand.py
+```
+
+> On Windows, replace `:` with `;` in `--add-data` flags.
+
+After building, copy `fonts`, `backgrounds`, `database.db`, `style.css` etc. to the output directory.
+
+## 😀 Feedback
+
+Open an [Issue](https://github.com/mkaaad/QuickHand/issues) on GitHub.

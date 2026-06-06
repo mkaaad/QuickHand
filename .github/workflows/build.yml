@@ -1,0 +1,108 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            arch: x86_64
+            separator: ";"
+            artifact_name: QuickHand-Windows-x86_64.rar
+
+          - os: ubuntu-latest
+            arch: x86_64
+            separator: ":"
+            artifact_name: QuickHand-Linux-x86_64.tar.gz
+
+          - os: macos-13
+            arch: x86_64
+            separator: ":"
+            artifact_name: QuickHand-macOS-x86_64.tar.gz
+
+          - os: macos-latest
+            arch: arm64
+            separator: ":"
+            artifact_name: QuickHand-macOS-arm64.tar.gz
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install system deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libxcb-xinerama0 \
+            libxcb-icccm4 \
+            libxcb-image0 \
+            libxcb-shm0 \
+            libxcb-keysyms1 \
+            libxcb-randr0 \
+            libxcb-render-util0 \
+            libxcb-xfixes0 \
+            libxcb-xkb1 \
+            libxkbcommon-x11-0
+
+      - name: Install Python deps
+        run: |
+          pip install --upgrade pip
+          pip install -r src/requirements.txt pyinstaller
+
+      - name: Build with PyInstaller
+        shell: bash
+        run: |
+          cd src
+          SEP="${{ matrix.separator }}"
+          pyinstaller --noconfirm -w \
+            --hidden-import pkg_resources.py2_warn \
+            -i icon.ico \
+            --add-data "database.db${SEP}." \
+            --add-data "style.css${SEP}." \
+            --add-data "icon.ico${SEP}." \
+            --add-data "fonts${SEP}fonts" \
+            --add-data "backgrounds${SEP}backgrounds" \
+            QuickHand.py
+
+      - name: Install WinRAR
+        if: runner.os == 'Windows'
+        run: choco install winrar -y
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd src/dist/QuickHand
+          rar a -m5 "../../../${{ matrix.artifact_name }}" *
+
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cd src/dist
+          tar czf "../../${{ matrix.artifact_name }}" QuickHand.app
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cd src/dist/QuickHand
+          tar czf "../../../${{ matrix.artifact_name }}" .
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifact_name }}
+          generate_release_notes: true
