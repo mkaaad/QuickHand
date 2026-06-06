@@ -32,6 +32,15 @@ class HandRightTab(QWidget):
         self.outputBrowseBtn = QPushButton('浏览')
 
         self.runBtn = QPushButton('运行')
+        self.progressBar = QProgressBar()
+        self.progressBar.setRange(0, 0)
+        self.progressBar.setTextVisible(True)
+        self.progressBar.setFormat('')
+        self.progressBar.hide()
+        self.logBox = QPlainTextEdit()
+        self.logBox.setReadOnly(True)
+        self.logBox.setMaximumBlockCount(1000)
+        self.logBox.hide()
 
         self.backgroundBlankRadioBtn = QRadioButton('使用空白背景')
         self.backgroundImageRadioBtn = QRadioButton('使用背景图片')
@@ -121,7 +130,9 @@ class HandRightTab(QWidget):
         self.inputAndRunLayout = QVBoxLayout()
         self.inputAndRunLayout.addWidget(self.inputBox)
         self.inputAndRunLayout.addWidget(self.outputBox)
+        self.inputAndRunLayout.addWidget(self.progressBar)
         self.inputAndRunLayout.addWidget(self.runBtn)
+        self.inputAndRunLayout.addWidget(self.logBox)
         self.inputAndRunBox = QWidget()
         self.inputAndRunBox.setLayout(self.inputAndRunLayout)
 
@@ -583,15 +594,15 @@ class HandRightTab(QWidget):
             background = background.resize((width * imageSizeX, height * imageSizeY), resample=Image.LANCZOS)
 
         # 字体文件
+        fontSize = self.fontSizeBox.value()
         fontName = self.fontPathBox.currentText()
         fontPath = os.path.abspath('./fonts/' + fontName)
         try:
-            font = ImageFont.truetype(fontPath)
+            font = ImageFont.truetype(fontPath, fontSize)
         except:
             QMessageBox.warning(self, '字体问题', '所选字体不是可打开的 ttf 字体文件')
             return False
 
-        fontSize = self.fontSizeBox.value()
         fontColor = self.fontColorBox.color
         fontColor = (fontColor.red(), fontColor.green(), fontColor.blue())
         lineSpacing = self.lineSpacingBox.value()
@@ -612,7 +623,6 @@ class HandRightTab(QWidget):
 
         template = Template(
             background=background,
-            font_size=fontSize,
             font=font,
             line_spacing=lineSpacing,
             fill=fontColor,  # 字体“颜色”
@@ -638,6 +648,23 @@ class HandRightTab(QWidget):
         thread.outputPath = self.outputPath
         thread.showImage = showImage
         thread.signal.connect(window.consolePrintBox.print)
+
+        self.logBox.clear()
+        self.logBox.show()
+        self.progressBar.show()
+        self.progressBar.setFormat('正在生成...')
+
+        def on_progress(text):
+            self.logBox.appendPlainText(text.strip())
+            t = text.strip().replace('\n', '')
+            if t:
+                self.progressBar.setFormat(t[:30])
+
+        def on_finished():
+            self.progressBar.hide()
+
+        thread.signal.connect(on_progress)
+        thread.finished.connect(on_finished)
         thread.start()
 
 
