@@ -29,6 +29,7 @@ class HandRightTab(QWidget):
 
         self.outputPathHint = QLabel('输出路径')
         self.outputPathBox = QLineEdit()
+        self.outputBrowseBtn = QPushButton('浏览')
 
         self.runBtn = QPushButton('运行')
 
@@ -38,6 +39,7 @@ class HandRightTab(QWidget):
 
         self.backgroundHint = QLabel('背景图片')
         self.backgroundBox = QComboBox()
+        self.backgroundBrowseBtn = QPushButton('浏览')
 
         self.backgroundSizeHint = QLabel('背景图片大小')
         self.backgroundSizeBoxX = QLineEdit()
@@ -112,6 +114,7 @@ class HandRightTab(QWidget):
         self.outputLayout.setContentsMargins(0,0,0,0)
         self.outputLayout.addWidget(self.outputPathHint)
         self.outputLayout.addWidget(self.outputPathBox)
+        self.outputLayout.addWidget(self.outputBrowseBtn)
         self.outputBox = QWidget()
         self.outputBox.setContentsMargins(0,0,0,0)
         self.outputBox.setLayout(self.outputLayout)
@@ -143,7 +146,14 @@ class HandRightTab(QWidget):
 
         self.optionsLayout = QFormLayout()
         self.optionsLayout.setWidget(0, QFormLayout.SpanningRole, self.backgroundTypeBox) # 背景类型
-        self.optionsLayout.addRow(self.backgroundHint, self.backgroundBox)  # 背景图片
+        self.backgroundSelectLayout = QHBoxLayout()
+        self.backgroundSelectLayout.setContentsMargins(0,0,0,0)
+        self.backgroundSelectLayout.addWidget(self.backgroundBox)
+        self.backgroundSelectLayout.addWidget(self.backgroundBrowseBtn)
+        self.backgroundSelectBox = QWidget()
+        self.backgroundSelectBox.setContentsMargins(0,0,0,0)
+        self.backgroundSelectBox.setLayout(self.backgroundSelectLayout)
+        self.optionsLayout.addRow(self.backgroundHint, self.backgroundSelectBox)  # 背景图片
         self.optionsLayout.setWidget(2, QFormLayout.LabelRole, self.backgroundSizeHint) # 背景大小
         self.optionsLayout.setWidget(2, QFormLayout.FieldRole, self.backgroundSizeBox) # 背景大小
         self.optionsLayout.addRow(QLabel(''), QLabel(''))  # 空白行
@@ -320,12 +330,15 @@ class HandRightTab(QWidget):
         self.addPresetBtn.clicked.connect(self.addPreset)
         self.delPresetBtn.clicked.connect(self.delPreset)
         self.presetList.itemClicked.connect(self.presetItemSelected)
+        self.outputBrowseBtn.clicked.connect(self.browseOutputPath)
+        self.backgroundBrowseBtn.clicked.connect(self.browseBackground)
 
 
     def backgroundBlankRadioBtnClicked(self):
         self.useBackgroundImage = False
         self.backgroundHint.setEnabled(False)
         self.backgroundBox.setEnabled(False)
+        self.backgroundBrowseBtn.setEnabled(False)
         self.backgroundSizeHint.setText('背景图片大小')
         self.backgroundSizeBoxX.setText('2000')
         self.backgroundSizeBoxY.setText('4000')
@@ -334,6 +347,7 @@ class HandRightTab(QWidget):
         self.useBackgroundImage = True
         self.backgroundHint.setEnabled(True)
         self.backgroundBox.setEnabled(True)
+        self.backgroundBrowseBtn.setEnabled(True)
         self.backgroundSizeHint.setText('背景图片缩放')
         self.backgroundSizeBoxX.setText('1')
         self.backgroundSizeBoxY.setText('1')
@@ -557,7 +571,9 @@ class HandRightTab(QWidget):
         if not self.useBackgroundImage:
             background = Image.new(mode="RGB", size=(imageSizeX, imageSizeY),color=(255, 255, 255))
         else:
-            imagePath = os.path.abspath('./backgrounds/' + imageName)
+            imagePath = self.backgroundBox.currentText()
+            if not os.path.isabs(imagePath):
+                imagePath = os.path.abspath('./backgrounds/' + imageName)
             try:
                 background = Image.open(imagePath, 'r')
             except:
@@ -642,6 +658,21 @@ class HandRightTab(QWidget):
                 return False # 任务取消
         else:
             return True # 路径存在, 继续任务
+
+    def browseOutputPath(self):
+        dirPath = QFileDialog.getExistingDirectory(self, '选择输出文件夹', self.outputPathBox.text())
+        if dirPath:
+            self.outputPathBox.setText(dirPath.replace('\\', '/'))
+
+    def browseBackground(self):
+        filePath, _ = QFileDialog.getOpenFileName(self, '选择背景图片', '', '图片文件 (*.png *.jpg *.jpeg *.bmp *.tiff)')
+        if filePath:
+            currentIndex = self.backgroundBox.findText(filePath)
+            if currentIndex >= 0:
+                self.backgroundBox.setCurrentIndex(currentIndex)
+            else:
+                self.backgroundBox.addItem(filePath)
+                self.backgroundBox.setCurrentText(filePath)
 
 
 
