@@ -1,5 +1,8 @@
 pillow >= 10.0.0
 
+# 核心依赖
+handright
+
 twine >= 6.0.0
 setuptools
 wheel
