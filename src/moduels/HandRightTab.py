@@ -132,6 +132,7 @@ class HandRightTab(QWidget):
         self.outputLayout.addWidget(self.outputPathBox)
         self.outputLayout.addWidget(self.outputBrowseBtn)
         self.outputLayout.addWidget(self.outputOpenBtn)
+        self.outputBox = QWidget()
         self.outputBox.setContentsMargins(0,0,0,0)
         self.outputBox.setLayout(self.outputLayout)
         self.inputAndRunLayout = QVBoxLayout()
@@ -603,12 +604,12 @@ class HandRightTab(QWidget):
             if not os.path.isabs(imagePath):
                 imagePath = os.path.abspath('./backgrounds/' + imageName)
             try:
-                background = Image.open(imagePath, 'r')
+                with Image.open(imagePath, 'r') as img:
+                    width, height = img.size
+                    background = img.resize((width * imageSizeX, height * imageSizeY), resample=Image.LANCZOS)
             except:
                 QMessageBox.warning(self, '背景问题', '所选背景图片不是可打开的图片文件')
                 return False
-            width, height = background.size
-            background = background.resize((width * imageSizeX, height * imageSizeY), resample=Image.LANCZOS)
 
         # 字体文件
         fontSize = self.fontSizeBox.value()
@@ -658,6 +659,7 @@ class HandRightTab(QWidget):
         )
 
         thread = GenerateImagesThread()
+        self._thread = thread
         thread.text = inputText
         thread.template = template
         thread.outputPath = self.outputPath
@@ -685,6 +687,7 @@ class HandRightTab(QWidget):
 
         def on_finished():
             self.progressBar.hide()
+            thread.deleteLater()
 
         thread.signal.connect(on_progress)
         thread.finished.connect(on_finished)
@@ -717,12 +720,12 @@ class HandRightTab(QWidget):
             if not os.path.isabs(imagePath):
                 imagePath = os.path.abspath('./backgrounds/' + imageName)
             try:
-                background = Image.open(imagePath, 'r')
+                with Image.open(imagePath, 'r') as img:
+                    width, height = img.size
+                    background = img.resize((width * imageSizeX, height * imageSizeY), resample=Image.LANCZOS)
             except:
                 QMessageBox.warning(self, '背景问题', '所选背景图片不是可打开的图片文件')
                 return
-            width, height = background.size
-            background = background.resize((width * imageSizeX, height * imageSizeY), resample=Image.LANCZOS)
 
         fontSize = self.fontSizeBox.value()
         fontName = self.fontPathBox.currentText()
@@ -762,6 +765,8 @@ class HandRightTab(QWidget):
             for im in images:
                 if previewImage is None:
                     previewImage = im
+                else:
+                    im.close()
                 pageCount += 1
             if previewImage is None:
                 QMessageBox.information(self, '预览', '未能生成预览图片')
@@ -828,6 +833,7 @@ class HandRightTab(QWidget):
         closeBtn.clicked.connect(dialog.accept)
         layout.addWidget(closeBtn, 0, Qt.AlignCenter)
         dialog.exec()
+        previewImage.close()
 
 
 

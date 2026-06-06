@@ -35,6 +35,7 @@ class GenerateImagesThread(QThread):
                     im.show()
                 outputDir = self.outputPath.replace('\\', '/')
                 im.save(outputDir + "/{}.{}".replace('//', '/').format(i, self.outputFormat))
+                im.close()
             self.signal.emit('所有图片生成完毕，输出文件夹为：%s\n\n' % outputDir)
         except LayoutError as e:
             self.signal.emit('布局参数错误：\n\n')
