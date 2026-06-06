@@ -1,8 +1,8 @@
 pillow >= 10.0.0
 
-twine >= 1.8.0
-setuptools >= 38.6.0
+twine >= 6.0.0
+setuptools
 wheel
 
-pytest
-pyside6
+pytest >= 8.0.0
+pyside6 >= 6.7.0
