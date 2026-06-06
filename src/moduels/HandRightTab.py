@@ -881,8 +881,6 @@ class HandRightTab(QWidget):
         else:
             if result[0] == 'True':
                 self.hideToSystemTraySwitch.setChecked(True)
-            else:
-                self.hideToSystemTraySwitch.setChecked(False)
 
     def hideToSystemTraySwitchClicked(self):
         cursor = self.conn.cursor()
