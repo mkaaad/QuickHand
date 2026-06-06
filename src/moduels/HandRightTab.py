@@ -866,13 +866,9 @@ class HandRightTab(QWidget):
             self.outputPathBox.setText(dirPath.replace('\\', '/'))
 
     def openOutputPath(self):
-        import subprocess
-        import urllib.parse
         path = self.outputPathBox.text().strip()
-        if path.startswith('file://'):
-            path = urllib.parse.urlparse(path).path
         if os.path.isdir(path):
-            subprocess.run(['open' if sys.platform == 'darwin' else ('explorer' if sys.platform == 'win32' else 'xdg-open'), path])
+            QDesktopServices.openUrl(QUrl.fromLocalFile(path))
         else:
             QMessageBox.warning(self, '路径错误', f'输出路径不存在：{path}')
 
