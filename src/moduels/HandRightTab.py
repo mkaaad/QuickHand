@@ -1,4 +1,5 @@
 import os
+import sys
 import sqlite3
 
 from PySide6.QtCore import *
@@ -6,10 +7,9 @@ from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 
 from PIL import Image, ImageFont
-from handright import Template, handwrite
+from handright import Template, handwrite, LayoutError
 
 from moduels.GenerateImagesThread import GenerateImagesThread
-from moduels.ConsoleWindow import ConsoleWindow
 from moduels.ColorLabel import ColorLabel
 # 参考 https://github.com/Gsllchb/Handright/blob/master/docs/tutorial.md
 
@@ -30,8 +30,10 @@ class HandRightTab(QWidget):
         self.outputPathHint = QLabel('输出路径')
         self.outputPathBox = QLineEdit()
         self.outputBrowseBtn = QPushButton('浏览')
+        self.outputOpenBtn = QPushButton('打开输出文件夹')
 
         self.runBtn = QPushButton('运行')
+        self.previewBtn = QPushButton('预览')
         self.progressBar = QProgressBar()
         self.progressBar.setRange(0, 0)
         self.progressBar.setTextVisible(True)
@@ -124,14 +126,17 @@ class HandRightTab(QWidget):
         self.outputLayout.addWidget(self.outputPathHint)
         self.outputLayout.addWidget(self.outputPathBox)
         self.outputLayout.addWidget(self.outputBrowseBtn)
-        self.outputBox = QWidget()
+        self.outputLayout.addWidget(self.outputOpenBtn)
         self.outputBox.setContentsMargins(0,0,0,0)
         self.outputBox.setLayout(self.outputLayout)
         self.inputAndRunLayout = QVBoxLayout()
         self.inputAndRunLayout.addWidget(self.inputBox)
         self.inputAndRunLayout.addWidget(self.outputBox)
         self.inputAndRunLayout.addWidget(self.progressBar)
-        self.inputAndRunLayout.addWidget(self.runBtn)
+        btnLayout = QHBoxLayout()
+        btnLayout.addWidget(self.runBtn)
+        btnLayout.addWidget(self.previewBtn)
+        self.inputAndRunLayout.addLayout(btnLayout)
         self.inputAndRunLayout.addWidget(self.logBox)
         self.inputAndRunBox = QWidget()
         self.inputAndRunBox.setLayout(self.inputAndRunLayout)
@@ -334,6 +339,7 @@ class HandRightTab(QWidget):
 
     def connectSlots(self):
         self.runBtn.clicked.connect(self.run)
+        self.previewBtn.clicked.connect(self.preview)
         self.backgroundBlankRadioBtn.clicked.connect(self.backgroundBlankRadioBtnClicked)
         self.backgroundImageRadioBtn.clicked.connect(self.backgroundImageRadioBtnClicked)
         self.upPresetBtn.clicked.connect(self.upMovePreset)
@@ -342,6 +348,7 @@ class HandRightTab(QWidget):
         self.delPresetBtn.clicked.connect(self.delPreset)
         self.presetList.itemClicked.connect(self.presetItemSelected)
         self.outputBrowseBtn.clicked.connect(self.browseOutputPath)
+        self.outputOpenBtn.clicked.connect(self.openOutputPath)
         self.backgroundBrowseBtn.clicked.connect(self.browseBackground)
 
 
@@ -640,14 +647,19 @@ class HandRightTab(QWidget):
             perturb_theta_sigma=perturbThetaSigma,  # 笔画旋转偏移随机扰动
         )
 
-        window = ConsoleWindow(self.parent())
         thread = GenerateImagesThread()
-        window.thread = thread
         thread.text = inputText
         thread.template = template
         thread.outputPath = self.outputPath
         thread.showImage = showImage
-        thread.signal.connect(window.consolePrintBox.print)
+        thread.bgWidth = imageSizeX
+        thread.bgHeight = imageSizeY
+        thread.fontSize = fontSize
+        thread.leftMargin = leftMargin
+        thread.rightMargin = rightMargin
+        thread.topMargin = topMargin
+        thread.bottomMargin = bottomMargin
+        thread.lineSpacing = lineSpacing
 
         self.logBox.clear()
         self.logBox.show()
@@ -666,6 +678,145 @@ class HandRightTab(QWidget):
         thread.signal.connect(on_progress)
         thread.finished.connect(on_finished)
         thread.start()
+
+    def preview(self):
+        if self.fontPathBox.currentText() == '':
+            QMessageBox.information(self, '字体问题', '请先选择字体')
+            return
+        inputText = self.inputBox.toPlainText()
+        if inputText == '':
+            QMessageBox.information(self, '预览', '请先输入要预览的文字')
+            return
+
+        try:
+            imageSizeX = int(self.backgroundSizeBoxX.text())
+            imageSizeY = int(self.backgroundSizeBoxY.text())
+        except:
+            QMessageBox.warning(self, '背景问题', '背景图片大小错误，请检查')
+            return
+
+        if not self.useBackgroundImage:
+            background = Image.new(mode='RGB', size=(imageSizeX, imageSizeY), color=(255, 255, 255))
+        else:
+            imageName = self.backgroundBox.currentText()
+            if imageName == '':
+                QMessageBox.warning(self, '背景问题', '背景图片文件为空')
+                return
+            imagePath = self.backgroundBox.currentText()
+            if not os.path.isabs(imagePath):
+                imagePath = os.path.abspath('./backgrounds/' + imageName)
+            try:
+                background = Image.open(imagePath, 'r')
+            except:
+                QMessageBox.warning(self, '背景问题', '所选背景图片不是可打开的图片文件')
+                return
+            width, height = background.size
+            background = background.resize((width * imageSizeX, height * imageSizeY), resample=Image.LANCZOS)
+
+        fontSize = self.fontSizeBox.value()
+        fontName = self.fontPathBox.currentText()
+        fontPath = os.path.abspath('./fonts/' + fontName)
+        try:
+            font = ImageFont.truetype(fontPath, fontSize)
+        except:
+            QMessageBox.warning(self, '字体问题', '所选字体不是可打开的 ttf 字体文件')
+            return
+
+        fontColor = self.fontColorBox.color
+        fontColor = (fontColor.red(), fontColor.green(), fontColor.blue())
+
+        template = Template(
+            background=background,
+            font=font,
+            line_spacing=self.lineSpacingBox.value(),
+            fill=fontColor,
+            left_margin=self.leftMarginBox.value(),
+            top_margin=self.topMarginBox.value(),
+            right_margin=self.rightMarginBox.value(),
+            bottom_margin=self.bottomMarginBox.value(),
+            word_spacing=self.wordSpacingBox.value(),
+            line_spacing_sigma=self.lindSpacingSigmaBox.value(),
+            font_size_sigma=self.fontSizeSigmaBox.value(),
+            word_spacing_sigma=self.wordSpacingSigmaBox.value(),
+            end_chars=self.endCharsBox.text(),
+            perturb_x_sigma=self.perturbXSigmaBox.value(),
+            perturb_y_sigma=self.perturbYSigmaBox.value(),
+            perturb_theta_sigma=self.perturbThetaSigmaBox.value(),
+        )
+
+        try:
+            images = handwrite(inputText, template)
+            previewImage = None
+            pageCount = 0
+            for im in images:
+                if previewImage is None:
+                    previewImage = im
+                pageCount += 1
+            if previewImage is None:
+                QMessageBox.information(self, '预览', '未能生成预览图片')
+                return
+            from PIL.ImageQt import ImageQt
+            from PySide6.QtGui import QPixmap
+            qimage = ImageQt(previewImage)
+            pixmap = QPixmap.fromImage(qimage)
+        except LayoutError as e:
+            msg = str(e)
+            if 'width < left_margin + font.size + right_margin' in msg:
+                need = self.leftMarginBox.value() + self.fontSizeBox.value() + self.rightMarginBox.value()
+                detail = (
+                    f'背景宽度不足：\n\n'
+                    f'当前背景宽度：{imageSizeX}\n'
+                    f'左边距：{self.leftMarginBox.value()}\n'
+                    f'字号：{self.fontSizeBox.value()}\n'
+                    f'右边距：{self.rightMarginBox.value()}\n'
+                    f'至少需要宽度：{need}\n\n'
+                    f'请增大背景宽度，或减小边距/字号。'
+                )
+                QMessageBox.warning(self, '预览 - 布局错误', detail)
+            elif 'height < top_margin + line_spacing + bottom_margin' in msg:
+                need = self.topMarginBox.value() + self.lineSpacingBox.value() + self.bottomMarginBox.value()
+                detail = (
+                    f'背景高度不足：\n\n'
+                    f'当前背景高度：{imageSizeY}\n'
+                    f'上边距：{self.topMarginBox.value()}\n'
+                    f'行间距：{self.lineSpacingBox.value()}\n'
+                    f'下边距：{self.bottomMarginBox.value()}\n'
+                    f'至少需要高度：{need}\n\n'
+                    f'请增大背景高度，或减小边距/行间距。'
+                )
+                QMessageBox.warning(self, '预览 - 布局错误', detail)
+            elif 'font.size > line_spacing' in msg:
+                detail = (
+                    f'字号超出行间距：\n\n'
+                    f'字号：{self.fontSizeBox.value()}\n'
+                    f'行间距：{self.lineSpacingBox.value()}\n\n'
+                    f'行间距必须 ≥ 字号，请增大行间距或减小字号。'
+                )
+                QMessageBox.warning(self, '预览 - 布局错误', detail)
+            else:
+                QMessageBox.warning(self, '预览 - 布局错误', f'{msg}\n\n请检查尺寸和边距设置。')
+            return
+        except Exception as e:
+            QMessageBox.warning(self, '预览出错', f'{type(e).__name__}: {e}')
+            return
+
+        infoText = f'第一页预览（共 {pageCount} 页）' if pageCount > 1 else '共 1 页'
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle('预览')
+        dialog.resize(800, 600)
+        layout = QVBoxLayout(dialog)
+        infoLabel = QLabel(infoText)
+        infoLabel.setAlignment(Qt.AlignCenter)
+        layout.addWidget(infoLabel)
+        label = QLabel()
+        label.setPixmap(pixmap.scaled(760, 500, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(label)
+        closeBtn = QPushButton('关闭')
+        closeBtn.clicked.connect(dialog.accept)
+        layout.addWidget(closeBtn, 0, Qt.AlignCenter)
+        dialog.exec()
 
 
 
@@ -690,6 +841,12 @@ class HandRightTab(QWidget):
         dirPath = QFileDialog.getExistingDirectory(self, '选择输出文件夹', self.outputPathBox.text())
         if dirPath:
             self.outputPathBox.setText(dirPath.replace('\\', '/'))
+
+    def openOutputPath(self):
+        import subprocess
+        path = self.outputPathBox.text()
+        if os.path.isdir(path):
+            subprocess.run(['open' if sys.platform == 'darwin' else ('explorer' if sys.platform == 'win32' else 'xdg-open'), path])
 
     def browseBackground(self):
         filePath, _ = QFileDialog.getOpenFileName(self, '选择背景图片', '', '图片文件 (*.png *.jpg *.jpeg *.bmp *.tiff)')
