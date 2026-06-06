@@ -84,6 +84,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
+          export PATH="$PATH:/c/Program Files/WinRAR"
           cd src/dist/QuickHand
           rar a -m5 "../../../${{ matrix.artifact_name }}" *
 
