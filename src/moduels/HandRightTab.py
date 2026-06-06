@@ -879,12 +879,11 @@ class HandRightTab(QWidget):
         elif sys.platform == 'darwin':
             subprocess.Popen(['open', path])
         else:
-            for cmd in [['gio', 'open', path], ['dolphin', path], ['xdg-open', path]]:
-                try:
-                    subprocess.Popen(cmd)
+            import shutil
+            for exe in ['dolphin', 'xdg-open']:
+                if shutil.which(exe):
+                    subprocess.Popen([exe, path])
                     break
-                except FileNotFoundError:
-                    continue
 
     def loadHideToTrayPreference(self):
         cursor = self.conn.cursor()
