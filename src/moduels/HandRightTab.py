@@ -26,6 +26,8 @@ class HandRightTab(QWidget):
     def initGui(self):
 
         self.inputBox = QPlainTextEdit()
+        self.charCountLabel = QLabel('字数：0')
+        self.charCountLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         self.outputPathHint = QLabel('输出路径')
         self.outputPathBox = QLineEdit()
@@ -112,6 +114,9 @@ class HandRightTab(QWidget):
 
         self.showImageBox = QCheckBox('每生成一张图片后自动打开')
 
+        self.outputFormatHint = QLabel('输出格式')
+        self.outputFormatBox = QComboBox()
+
         self.presetHint = QLabel('预设列表')
         self.presetList = QListWidget()
 
@@ -131,6 +136,7 @@ class HandRightTab(QWidget):
         self.outputBox.setLayout(self.outputLayout)
         self.inputAndRunLayout = QVBoxLayout()
         self.inputAndRunLayout.addWidget(self.inputBox)
+        self.inputAndRunLayout.addWidget(self.charCountLabel)
         self.inputAndRunLayout.addWidget(self.outputBox)
         self.inputAndRunLayout.addWidget(self.progressBar)
         btnLayout = QHBoxLayout()
@@ -193,6 +199,7 @@ class HandRightTab(QWidget):
         self.optionsLayout.addRow(self.endCharsHint, self.endCharsBox)  # 防止行首字符
         self.optionsLayout.addRow(QLabel(''), QLabel(''))  # 空白行
         self.optionsLayout.setWidget(23, QFormLayout.SpanningRole, self.showImageBox)
+        self.optionsLayout.addRow(self.outputFormatHint, self.outputFormatBox)  # 输出格式
 
 
         self.optionsBox = QWidget()
@@ -249,6 +256,8 @@ class HandRightTab(QWidget):
 
         self.fontPathBox.clear()
         self.fontPathBox.addItems(os.listdir('./fonts')) # 添加字体列表
+
+        self.outputFormatBox.addItems(['webp', 'png', 'jpg', 'bmp', 'tiff'])
 
         self.fontSizeBox.setSingleStep(5)
         self.fontSizeBox.setMinimum(1)
@@ -340,6 +349,7 @@ class HandRightTab(QWidget):
     def connectSlots(self):
         self.runBtn.clicked.connect(self.run)
         self.previewBtn.clicked.connect(self.preview)
+        self.inputBox.textChanged.connect(self.updateCharCount)
         self.backgroundBlankRadioBtn.clicked.connect(self.backgroundBlankRadioBtnClicked)
         self.backgroundImageRadioBtn.clicked.connect(self.backgroundImageRadioBtnClicked)
         self.upPresetBtn.clicked.connect(self.upMovePreset)
@@ -652,6 +662,7 @@ class HandRightTab(QWidget):
         thread.template = template
         thread.outputPath = self.outputPath
         thread.showImage = showImage
+        thread.outputFormat = self.outputFormatBox.currentText()
         thread.bgWidth = imageSizeX
         thread.bgHeight = imageSizeY
         thread.fontSize = fontSize
@@ -847,6 +858,13 @@ class HandRightTab(QWidget):
         path = self.outputPathBox.text()
         if os.path.isdir(path):
             subprocess.run(['open' if sys.platform == 'darwin' else ('explorer' if sys.platform == 'win32' else 'xdg-open'), path])
+
+    def updateCharCount(self):
+        import string
+        text = self.inputBox.toPlainText()
+        punct = set(string.punctuation + '，。、！？；：""''（）【】《》—…·～‧．％℃℉　「」『』')
+        count = sum(1 for c in text if c not in string.whitespace and c not in punct)
+        self.charCountLabel.setText(f'字数：{count}')
 
     def browseBackground(self):
         filePath, _ = QFileDialog.getOpenFileName(self, '选择背景图片', '', '图片文件 (*.png *.jpg *.jpeg *.bmp *.tiff)')

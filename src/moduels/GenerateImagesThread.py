@@ -8,6 +8,7 @@ class GenerateImagesThread(QThread):
     outputPath = None
     signal = Signal(str)
     showImage = False
+    outputFormat = 'webp'
     bgWidth = None
     bgHeight = None
     fontSize = None
@@ -33,7 +34,7 @@ class GenerateImagesThread(QThread):
                 if self.showImage == True:
                     im.show()
                 outputDir = self.outputPath.replace('\\', '/')
-                im.save(outputDir + "/{}.webp".replace('//', '/').format(i))
+                im.save(outputDir + "/{}.{}".replace('//', '/').format(i, self.outputFormat))
             self.signal.emit('所有图片生成完毕，输出文件夹为：%s\n\n' % outputDir)
         except LayoutError as e:
             self.signal.emit('布局参数错误：\n\n')
