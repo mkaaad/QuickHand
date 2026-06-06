@@ -34,6 +34,8 @@ class HandRightTab(QWidget):
         self.outputPathBox = QLineEdit()
         self.outputBrowseBtn = QPushButton('浏览')
         self.outputOpenBtn = QPushButton('打开输出文件夹')
+        if sys.platform == 'linux':
+            self.outputOpenBtn.hide()
 
         self.runBtn = QPushButton('运行')
         self.previewBtn = QPushButton('预览')
