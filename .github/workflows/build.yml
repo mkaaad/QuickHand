@@ -20,11 +20,6 @@ jobs:
             separator: ":"
             artifact_name: QuickHand-Linux-x86_64.tar.gz
 
-          - os: macos-13
-            arch: x86_64
-            separator: ":"
-            artifact_name: QuickHand-macOS-x86_64.tar.gz
-
           - os: macos-latest
             arch: arm64
             separator: ":"
