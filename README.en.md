@@ -4,6 +4,8 @@
 
 A fast handwritten-style text image generator. GUI wrapper for [Handright](https://github.com/Gsllchb/Handright/).
 
+This repository is a fork of [HaujetZhao/QuickHand](https://github.com/HaujetZhao/QuickHand), with ongoing improvements on top of the original work.
+
 Open source and free to use. Downloads on the [Release](https://github.com/mkaaad/QuickHand/releases) page.
 
 Screenshot:

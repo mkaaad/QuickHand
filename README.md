@@ -4,6 +4,8 @@
 
 快速仿手写文字的图片生成器。基于 [Handright](https://github.com/Gsllchb/Handright/) 的 GUI。
 
+本仓库源自 [HaujetZhao/QuickHand](https://github.com/HaujetZhao/QuickHand)，在原作基础上持续改进。
+
 开源免费，下载请到 [Release](https://github.com/mkaaad/QuickHand/releases) 界面。
 
 界面预览：
