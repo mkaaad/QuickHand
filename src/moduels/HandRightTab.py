@@ -14,10 +14,11 @@ from moduels.ColorLabel import ColorLabel
 # 参考 https://github.com/Gsllchb/Handright/blob/master/docs/tutorial.md
 
 class HandRightTab(QWidget):
-    def __init__(self, parent, conn, presetTableName):
+    def __init__(self, parent, conn, presetTableName, preferenceTableName='preference'):
         super(HandRightTab, self).__init__(parent)
         self.conn = conn
         self.presetTableName = presetTableName
+        self.preferenceTableName = preferenceTableName
         self.initGui()
         self.refreshList()
         self.connectSlots()
@@ -117,6 +118,8 @@ class HandRightTab(QWidget):
         self.outputFormatHint = QLabel('输出格式')
         self.outputFormatBox = QComboBox()
 
+        self.hideToSystemTraySwitch = QCheckBox('点击关闭按钮时隐藏到托盘')
+
         self.presetHint = QLabel('预设列表')
         self.presetList = QListWidget()
 
@@ -201,6 +204,7 @@ class HandRightTab(QWidget):
         self.optionsLayout.addRow(QLabel(''), QLabel(''))  # 空白行
         self.optionsLayout.setWidget(23, QFormLayout.SpanningRole, self.showImageBox)
         self.optionsLayout.addRow(self.outputFormatHint, self.outputFormatBox)  # 输出格式
+        self.optionsLayout.addRow(QLabel(''), self.hideToSystemTraySwitch)
 
 
         self.optionsBox = QWidget()
@@ -346,6 +350,7 @@ class HandRightTab(QWidget):
         self.splitBetweenInputAndOption.setStretchFactor(0,5)
         self.splitBetweenInputAndOption.setStretchFactor(1,1)
 
+        self.loadHideToTrayPreference()
 
     def connectSlots(self):
         self.runBtn.clicked.connect(self.run)
@@ -361,6 +366,7 @@ class HandRightTab(QWidget):
         self.outputBrowseBtn.clicked.connect(self.browseOutputPath)
         self.outputOpenBtn.clicked.connect(self.openOutputPath)
         self.backgroundBrowseBtn.clicked.connect(self.browseBackground)
+        self.hideToSystemTraySwitch.clicked.connect(self.hideToSystemTraySwitchClicked)
 
 
     def backgroundBlankRadioBtnClicked(self):
@@ -861,9 +867,31 @@ class HandRightTab(QWidget):
 
     def openOutputPath(self):
         import subprocess
-        path = self.outputPathBox.text()
+        import urllib.parse
+        path = self.outputPathBox.text().strip()
+        if path.startswith('file://'):
+            path = urllib.parse.urlparse(path).path
         if os.path.isdir(path):
             subprocess.run(['open' if sys.platform == 'darwin' else ('explorer' if sys.platform == 'win32' else 'xdg-open'), path])
+        else:
+            QMessageBox.warning(self, '路径错误', f'输出路径不存在：{path}')
+
+    def loadHideToTrayPreference(self):
+        cursor = self.conn.cursor()
+        result = cursor.execute('''select value from %s where item = 'hideToTrayWhenHitCloseButton'; ''' % self.preferenceTableName).fetchone()
+        if result is None:
+            cursor.execute('''insert into %s (item, value) values ('hideToTrayWhenHitCloseButton', 'False') ''' % self.preferenceTableName)
+            self.conn.commit()
+        else:
+            if result[0] == 'True':
+                self.hideToSystemTraySwitch.setChecked(True)
+            else:
+                self.hideToSystemTraySwitch.setChecked(False)
+
+    def hideToSystemTraySwitchClicked(self):
+        cursor = self.conn.cursor()
+        cursor.execute('''update %s set value='%s' where item = 'hideToTrayWhenHitCloseButton';''' % (self.preferenceTableName, str(self.hideToSystemTraySwitch.isChecked())))
+        self.conn.commit()
 
     def updateCharCount(self):
         import string

@@ -12,7 +12,6 @@ from PySide6.QtWidgets import *
 
 from moduels.SystemTray import SystemTray # 引入托盘栏
 from moduels.HandRightTab import HandRightTab
-from moduels.ConfigTab import ConfigTab
 
 # PyInstaller 打包后资源文件解压在 sys._MEIPASS，需要切换工作目录
 if getattr(sys, 'frozen', False):
@@ -46,11 +45,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.tabs)
 
         # 定义多个不同功能的 tab
-        self.handRightTab = HandRightTab(self, conn, presetTableName)  # 主要功能的 tab
-        self.ConfigTab = ConfigTab(self, conn, preferenceTableName)  # 配置
+        self.handRightTab = HandRightTab(self, conn, presetTableName, preferenceTableName)  # 主要功能的 tab
 
         self.tabs.addTab(self.handRightTab, self.tr('HandRight'))
-        self.tabs.addTab(self.ConfigTab, self.tr('设置'))
         self.adjustSize()
 
         # 设置图标
@@ -85,7 +82,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         """Shuts down application on close."""
         # Return stdout to defaults.
-        if main.ConfigTab.hideToSystemTraySwitch.isChecked():
+        if self.handRightTab.hideToSystemTraySwitch.isChecked():
             event.ignore()
             self.hide()
         else:
